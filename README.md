@@ -1,6 +1,10 @@
 # Connect4Game 使用指南
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Issues](https://img.shields.io/github/issues/AcaiHi/Unified_Interface_for_PettingZoo_Player_Matches)
 
 本指南介紹 `Connect4Game` 的可用函式、玩家類別範例以及深度強化學習玩家的封裝方式。最後附上對戰範例供參考。
+
 
 ## 1. Connect4Game 的可用函式
 
