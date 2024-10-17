@@ -189,6 +189,6 @@ if __name__ == "__main__":
 ```
 
 
-PS. Dockerfile 可以啟用GPU支援，但是需要在主機上安裝NVIDIA Container Toolkit (ver>=12.4)，並且在執行docker時加上`--gpus all`參數。
+PS. Dockerfile 可以啟用GPU支援，但是需要在主機上安裝NVIDIA Container Toolkit (cuda>=12.4)，並且在執行docker時加上`--gpus all`參數。
 
 PS. environment.yaml 放了一些常用的套件可以直接用 conda 創建環境，`conda env create -f environment.yaml`。
