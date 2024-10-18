@@ -6,19 +6,11 @@ import random
 import os
 from utils import dotdict
 
-DQNPlayer_args = dotdict({
-    'lr': 0.001,
-    'gamma': 0.95,
-    'epsilon_start': 1.0,
-    'epsilon_min': 0.01,
-    'epsilon_decay': 0.5,
-    'model_path': './my.weights.h5'
-})
-
 class Player:
     def play(self):
         """
         Abstract method to be implemented by different player types.
+        The `play` method must be implemented in each subclass to define specific behavior.
         """
         pass
 
@@ -27,7 +19,7 @@ class RandomPlayer(Player):
         self.game = game
 
     def play(self):
-        valid_moves = self.game.getValidMoves()  # 從 game 取得有效行動
+        valid_moves = self.game.getValidMoves()
         valid_actions = np.where(valid_moves == 1)[0]
         return np.random.choice(valid_actions)
 
@@ -46,6 +38,38 @@ class HumanPlayer(Player):
             else:
                 print("Invalid move. Please try again.")
         return action
+
+"""
+How to set up a DQN Player:
+
+1. **Define Parameters (`DQNPlayer_args`)**:
+   - First, define the parameters like learning rate (`lr`), discount factor (`gamma`), and exploration settings (`epsilon_start`, `epsilon_min`, `epsilon_decay`). These settings are crucial for controlling the learning behavior of the DQN model.
+
+2. **Create the Model Class (`DQNModel`)**:
+   - The `DQNModel` class defines the architecture of the neural network that will be used to approximate the Q-values for each action. This consists of multiple fully connected layers and an output layer to predict the action values.
+
+3. **Instantiate the DQN Player (`DQNPlayer`)**:
+   - Use the `DQNPlayer` class to interact with the environment. The player class maintains the main model (`model`) and a target model (`target_model`) to stabilize training.
+   - It uses a replay buffer (`memory`) to store experiences and learn from them by sampling random batches during training.
+   - The `play` method is a crucial part of each player and must be implemented. It decides actions using an epsilon-greedy strategy to balance exploration and exploitation.
+
+4. **Training and Target Update**:
+   - The training process involves sampling experiences from the replay buffer, calculating target Q-values using the target network, and fitting the main model to minimize the loss between current Q-values and target Q-values.
+   - The target model is updated periodically to match the weights of the main model, which helps stabilize learning.
+
+5. **Save and Load Model**:
+   - The `save` and `load` methods are used to save the model weights to a file and load them back when needed.
+"""
+
+
+DQNPlayer_args = dotdict({
+    'lr': 0.001,
+    'gamma': 0.95,
+    'epsilon_start': 1.0,
+    'epsilon_min': 0.01,
+    'epsilon_decay': 0.5,
+    # 'model_path': './my.weights.h5'
+})
 
 class DQNModel(tf.keras.Model):
     def __init__(self, action_size):
@@ -68,12 +92,12 @@ class DQNPlayer(Player):
         self.args = args
         self.action_size = game.getActionSize()
         self.model = self._build_model()
-        self.target_model = self._build_model()  # Target network for stable Q-learning
-        self.target_model.set_weights(self.model.get_weights())  # Sync weights initially
+        self.target_model = self._build_model()
+        self.target_model.set_weights(self.model.get_weights())
         self.memory = deque(maxlen=2000)
         self.batch_size = 64
         self.gamma = args.gamma
-        self.epsilon = args.epsilon_start  # Epsilon for exploration
+        self.epsilon = args.epsilon_start
         self.epsilon_min = args.epsilon_min
         self.epsilon_decay = args.epsilon_decay
         self.previous_state = None
@@ -86,34 +110,29 @@ class DQNPlayer(Player):
 
     def play(self):
         """
-        Predict the action using epsilon-greedy strategy.
-        This method also stores the previous state-action pair in memory when a new action is taken.
+        Predict the next action using epsilon-greedy strategy.
         """
-        current_state = self.game.getCanonicalForm(self.game.getCurrentPlayer())  # 直接從 game 中取得棋盤狀態
+        current_state = self.game.getCanonicalForm(self.game.getCurrentPlayer())
 
         if self.previous_state is not None:
-            # 如果前一個狀態存在，這意味著新的狀態將被記住
             reward = self.getReward()
             done = self.game.getGameResult() != 0
             self.remember(self.previous_state, self.previous_action, reward, current_state, done)
 
-        valid_moves = self.game.getValidMoves()  # 獲取有效行動掩碼
-        valid_actions = np.where(valid_moves == 1)[0]  # 獲取有效行動的索引
+        valid_moves = self.game.getValidMoves()
+        valid_actions = np.where(valid_moves == 1)[0]
 
-        if len(valid_actions) == 0:  # 如果沒有合法動作
+        if len(valid_actions) == 0:
             raise ValueError("No valid actions available!")
 
         if np.random.rand() <= self.epsilon:
-            # 隨機選擇一個合法動作（探索）
-            action = np.random.choice(valid_actions)
+            action = np.random.choice(valid_actions)  # Random action (exploration)
         else:
-            # 預測行動（利用）
             state_input = np.array(current_state).reshape(-1, self.game.board_x, self.game.board_y, 1)
             q_values = self.model.predict(state_input, verbose=0)[0]
-            q_values[valid_moves == 0] = -float('inf')  # 掩蓋無效行動
+            q_values[valid_moves == 0] = -float('inf')  # Mask invalid actions
             action = np.argmax(q_values)
 
-        # 更新上一步狀態和行動
         self.previous_state = current_state
         self.previous_action = action
 
@@ -124,13 +143,13 @@ class DQNPlayer(Player):
         Calculates the reward based on the game state.
         """
         result = self.game.getGameResult()
-        if result == 1:  # Player 1 wins
-            return 1
-        elif result == -1:  # Player 2 wins
-            return -1
-        elif result == 1e-4:  # Draw
-            return 0.5
-        return 0  # No reward for ongoing game
+        if result == 1:
+            return 1  # Win
+        elif result == -1:
+            return -1  # Loss
+        elif result == 1e-4:
+            return 0.5  # Draw
+        return 0  # Ongoing
 
     def remember(self, state, action, reward, next_state, done):
         """
@@ -143,7 +162,7 @@ class DQNPlayer(Player):
         Train the DQN model using experiences sampled from the replay buffer.
         """
         if len(self.memory) < self.batch_size:
-            return  # Not enough samples to train
+            return
 
         minibatch = random.sample(self.memory, self.batch_size)
         state_batch, target_batch = [], []
@@ -152,13 +171,11 @@ class DQNPlayer(Player):
             state_input = np.array(state).reshape(-1, self.game.board_x, self.game.board_y, 1)
             next_state_input = np.array(next_state).reshape(-1, self.game.board_x, self.game.board_y, 1)
 
-            # Predict current state Q-values
             q_values = self.model.predict(state_input, verbose=0)[0]
 
             if done:
-                q_values[action] = reward  # Terminal state
+                q_values[action] = reward
             else:
-                # Predict next state Q-values using the target model
                 next_q_values = self.target_model.predict(next_state_input, verbose=0)[0]
                 q_values[action] = reward + self.gamma * np.amax(next_q_values)
 
@@ -168,10 +185,8 @@ class DQNPlayer(Player):
         state_batch = np.array(state_batch)
         target_batch = np.array(target_batch)
 
-        # Train the model
         self.model.fit(state_batch, target_batch, epochs=1, verbose=0)
 
-        # Update epsilon (exploration rate)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 

@@ -16,7 +16,7 @@ class Connect4Game:
         self.num_players = len(self.env.agents)  # Number of players (typically 2)
         self.current_player = self.env.agent_selection  # Keep track of the current player
 
-        # 緩存環境狀態信息
+        # Cache environment state information
         self.observation = None
         self.action_mask = None
         self.termination = False
@@ -24,10 +24,10 @@ class Connect4Game:
         self.reward = 0
         self.info = {}
 
-        # 保存當前的棋盤狀態
-        self.board = np.zeros((self.board_x, self.board_y))  # 初始時棋盤是空的
+        # Save the current board state
+        self.board = np.zeros((self.board_x, self.board_y))  # Initially, the board is empty
 
-        # 初始化緩存的觀察值和動作掩碼
+        # Initialize cached observations and action mask
         self.update_state_cache()
 
     def update_state_cache(self):
@@ -39,9 +39,9 @@ class Connect4Game:
         if not (self.termination or self.truncation):
             self.action_mask = np.array(self.observation['action_mask'])
         else:
-            self.action_mask = np.zeros(self.action_size)  # No valid moves if game is over
+            self.action_mask = np.zeros(self.action_size)  # No valid moves if the game is over
 
-        # 更新棋盤狀態
+        # Update the board state
         self.board = self.observation['observation'][:, :, 0] - self.observation['observation'][:, :, 1]
         self.current_player = self.env.agent_selection
 
@@ -81,6 +81,8 @@ class Connect4Game:
     def getNextState(self, action):
         """
         Executes the given action and returns the next board state and the next player.
+        :param action: The action to take (column number where a piece is placed).
+        :return: A tuple containing the next board state and the next player.
         """
         self.env.step(action)  # Perform action
         self.update_state_cache()  # Update cached state
@@ -96,7 +98,7 @@ class Connect4Game:
         if self.termination or self.truncation:
             player_0_reward = self.env.rewards['player_0']
             player_1_reward = self.env.rewards['player_1']
-            # print(f"====================Game result: { 'Player 1' if player_0_reward == 1 else 'Player 2' if player_1_reward == 1 else 'Draw' }!!!====================")
+            # Determine the winner or if the game is a draw
             if player_0_reward == 1:
                 return 1  # Player 1 wins
             elif player_1_reward == 1:
@@ -108,14 +110,16 @@ class Connect4Game:
     def getCanonicalForm(self, player):
         """
         Returns the canonical form of the board for the current player.
+        :param player: The player whose perspective is needed (1 for Player 1, -1 for Player 2).
         """
         return self.board * player  # Simply return the board multiplied by player
 
     def display(self):
-        board = self.getCanonicalForm(self.getCurrentPlayer())
         """
         Displays the current board state.
+        Uses symbols X for Player 1, O for Player 2, and . for empty spaces.
         """
+        board = self.getCanonicalForm(self.getCurrentPlayer())
         print(" -----------------------")
         for y in range(self.board_x):
             print("|", end="")
@@ -134,6 +138,8 @@ class Connect4Game:
         """
         Simulates the environment to match a given board and player.
         This method replays all the moves from an empty state to reach the desired state.
+        :param board: A numpy array representing the board state.
+        :param player: The player who is to make the next move (1 for Player 1, -1 for Player 2).
         """
         self.env.reset()  # Reset the environment to the initial state
         self.update_state_cache()
@@ -156,4 +162,3 @@ class Connect4Game:
         self.current_player = expected_player
         self.env.agent_selection = self.current_player
         self.update_state_cache()
-

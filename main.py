@@ -16,9 +16,29 @@ def main():
 
     # 初始化 CXXXXXXXXX 的 DQNPlayer，並使用其專屬的 args
     player1 = C_DQNPlayer(game, args_in_C)
+    from CXXXXXXXXX.players import RandomPlayer
+    random_player = RandomPlayer(game)
+    arena = Arena(player1, random_player, game)
+
+    num_training_games = 20  # Number of games to play for training
+    print(f"Training the DQNPlayer with {num_training_games} games...")
+    from tqdm import tqdm
+    for _ in tqdm(range(num_training_games)):
+        arena.playGame()  # Play games to accumulate experiences for training
+        player1.train()  # Train the DQN model after each game
+        player1.update_target_model()  # Update the target model periodically
+
 
     # 初始化 FXXXXXXXXX 的 DQNPlayer，並使用其專屬的 args
     player2 = F_DQNPlayer(game, args_in_F)
+    arena = Arena(player2, random_player, game)
+
+    print(f"Training the DQNPlayer with {num_training_games} games...")
+    from tqdm import tqdm
+    for _ in tqdm(range(num_training_games)):
+        arena.playGame()  # Play games to accumulate experiences for training
+        player2.train()  # Train the DQN model after each game
+        player2.update_target_model()  # Update the target model periodically
 
     # 設定對戰
     arena = Arena(player1, player2, game)
