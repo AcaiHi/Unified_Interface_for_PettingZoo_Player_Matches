@@ -46,11 +46,23 @@ RUN conda env create -f /workspace/environment.yaml && conda clean -afy
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 ENV CUDA_HOME=/usr/local/cuda
 
+# 創建 tensorflow_log 目錄並設置權限
+RUN mkdir -p /workspace/tensorflow_log && chmod -R 777 /workspace/tensorflow_log
+
+# 設定 TensorFlow 的日誌輸出路徑
+ENV MLIR_CRASH_REPRODUCER_DIRECTORY=/workspace/tensorflow_log
+
+# 設定沒有NUMA的環境變數
+ENV TF_NUMA_NODE_DISABLED=1
+ENV TF_GPU_ALLOCATOR=cuda_malloc_async
+ENV TF_FORCE_GPU_ALLOW_GROWTH=true
+ENV TF_CPP_MIN_LOG_LEVEL=3
+
 # 設定工作目錄
 WORKDIR /workspace
 
 # 將本地的 Python 腳本複製到容器內
-COPY * /workspace/
+COPY . CXXXXXXXXX/ FXXXXXXXXX/ /workspace/
 
 # 設定 Keras 配置以使用 TensorFlow 作為後端
 RUN mkdir -p /root/.keras && \

@@ -1,4 +1,3 @@
-# Arena.py
 from tqdm import tqdm
 import numpy as np
 
@@ -22,33 +21,34 @@ class Arena():
         """
         players = [self.player2, None, self.player1]  # List to keep track of current players
         curPlayer = 1  # Player 1 starts the game
-        board = self.game.getInitBoard()  # Initialize the game board
+        self.game.getInitBoard()  # Initialize the game board inside the game class
         it = 0  # Turn counter
 
         while True:
             it += 1
             if verbose:
                 print("Turn ", str(it), "Player ", str(curPlayer))
-                self.game.display(board)  # Display the board if verbose is True
+                self.game.display()  # Display the board if verbose is True
 
             player = players[curPlayer + 1]  # Get the current player
-            action = player.play(self.game.getCanonicalForm(board, curPlayer))  # Get the action from the player
+            action = player.play()  # Call player's action method
 
-            valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer), 1)  # Get valid moves
-
+            valids = self.game.getValidMoves()  # Get valid moves from the game
             if valids[action] == 0:  # Ensure the action is valid
                 print(action)
                 assert valids[action] > 0
 
-            board, curPlayer = self.game.getNextState(board, curPlayer, action)  # Update the board and switch players
-
-            r = self.game.getGameEnded(board, curPlayer)  # Check if the game has ended
-
+            # 使用 getNextState 管理棋盤和玩家切換
+            next_board, next_player = self.game.getNextState(action)
+            r = self.game.getGameResult()  # Check if the game has ended
             if r != 0:  # If the game is over
                 if verbose:
                     print("Game over: Turn ", str(it), "Result ", str(r))
-                    self.game.display(board)  # Display final board state
+                    self.game.display()  # Display final board state
                 return r  # Return the result of the game
+
+            curPlayer = next_player  # 切換到下一個玩家
+
 
     def playGames(self, num, verbose=False):
         """

@@ -1,18 +1,63 @@
 # Connect4Game 使用指南
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Issues](https://img.shields.io/github/issues/AcaiHi/Unified_Interface_for_PettingZoo_Player_Matches)
 
-本指南介紹 `Connect4Game` 的可用函式、玩家類別範例以及深度強化學習玩家的封裝方式。最後附上對戰範例供參考。
+本指南介紹 `Connect4Game` 的可用函式、資料夾結構以及如何運行 `main.py` 進行 Connect 4 遊戲的對戰。
 
-## 1. Connect4Game 的可用函式
+## 1. 資料夾結構
 
-`Connect4Game` 提供了多種操作遊戲的方法，以下是一些常用函式並附有範例輸出。
+每個同學的代碼均應放置在以學號命名的資料夾中，例如 `CXXXXXXXXX` 和 `FXXXXXXXXX`。每個資料夾應該包含以下內容：
 
-### `getInitBoard(self)`
-- **功能**: 重置遊戲並返回初始空棋盤，棋盤為 2D 陣列，0 表示空格，1 表示玩家1，-1 表示玩家2。
+```
+.
+├── Arena.py
+├── CXXXXXXXXX
+│   ├── __init__.py
+│   ├── my.weights.h5
+│   └── players.py
+├── Dockerfile
+├── FXXXXXXXXX
+│   ├── __init__.py
+│   ├── my.weights.h5
+│   └── players.py
+├── README.md
+├── _players.py
+├── connect4.py
+├── dockerUse.md
+├── environment.yaml
+├── main.py
+└── utils.py
+```
+
+- `CXXXXXXXXX` 和 `FXXXXXXXXX` 資料夾中應包含每位同學的 `players.py` 和相應的權重文件 `my.weights.h5`，供 `main.py` 對戰使用。
+- `Arena.py` 是用於執行玩家對戰的模塊，與 `main.py` 一同使用。
+
+## 2. Connect4Game 的主要功能
+
+以下是對 `Connect4Game` 的所有功能描述，並附上範例程式碼來演示如何使用這些方法：
+
+### 1. `__init__(self)`
+- **功能**: 初始化 Connect4 遊戲環境，設置棋盤大小、動作數量，並初始化狀態緩存。
+- **範例**:
+  ```python
+  game = Connect4Game()  # 初始化遊戲
+  ```
+
+### 2. `update_state_cache(self)`
+- **功能**: 更新遊戲環境的狀態緩存，包括觀察值、動作掩碼、遊戲是否結束等信息。在每次執行 `env.step()` 和 `env.reset()` 後應該調用此方法。
+- **範例**:
+  ```python
+  game.update_state_cache()  # 更新狀態緩存
+  ```
+
+### 3. `getInitBoard(self)`
+- **功能**: 重置遊戲環境並返回初始空棋盤。棋盤是 6x7 的 2D 陣列，`0` 表示空格。
 - **範例**:
   ```python
   board = game.getInitBoard()
   print(board)
-  # Output: 
+  # Output:
   # [[0 0 0 0 0 0 0]
   #  [0 0 0 0 0 0 0]
   #  [0 0 0 0 0 0 0]
@@ -21,62 +66,72 @@
   #  [0 0 0 0 0 0 0]]
   ```
 
-> ⚠️ **重要**: 請確保每次使用 `getInitBoard()` 函式後，遊戲已正確初始化。
+### 4. `getCurrentPlayer(self)`
+- **功能**: 返回當前玩家，`1` 表示玩家1，`-1` 表示玩家2。
+- **範例**:
+  ```python
+  current_player = game.getCurrentPlayer()
+  print(current_player)  # Output: 1 表示玩家1
+  ```
 
-### `getBoardSize(self)`
+### 5. `getBoardSize(self)`
 - **功能**: 返回棋盤大小（行數與列數）。
 - **範例**:
   ```python
   board_size = game.getBoardSize()
-  print(board_size)
-  # Output: (6, 7)
+  print(board_size)  # Output: (6, 7)
   ```
 
-### `getActionSize(self)`
-- **功能**: 返回可用動作數量（可放置棋子的列數）。
+### 6. `getActionSize(self)`
+- **功能**: 返回可用動作的數量，即可以放置棋子的列數。
 - **範例**:
   ```python
   action_size = game.getActionSize()
-  print(action_size)
-  # Output: 7
+  print(action_size)  # Output: 7
   ```
 
-### `getNextState(self, board, player, action)`
-- **功能**: 給定棋盤、玩家和動作，返回下一步的棋盤狀態和下一位玩家。
+### 7. `getValidMoves(self)`
+- **功能**: 返回當前棋盤的有效動作，1 表示該列可以放置棋子，0 表示不能。
 - **範例**:
   ```python
-  next_board, next_player = game.getNextState(board, 1, 2)
+  valid_moves = game.getValidMoves()
+  print(valid_moves)  # Output: [1 1 1 1 1 1 1] 表示所有列均可放置棋子
+  ```
+
+### 8. `getNextState(self, action)`
+- **功能**: 執行指定動作並返回下一步棋盤狀態和下一位玩家。
+- **範例**:
+  ```python
+  next_board, next_player = game.getNextState(2)  # 在第3列放置棋子
   print(next_board)
-  # Output: 在第二列新增了一個玩家1的棋子
+  print(next_player)  # Output: 玩家2進入下一回合
   ```
 
-### `getValidMoves(self, board, player)`
-- **功能**: 返回當前棋盤的有效動作（哪些列可以放置棋子）。
-- **範例**:
-  ```python
-  valid_moves = game.getValidMoves(board, 1)
-  print(valid_moves)
-  # Output: [1 1 1 1 1 1 1]  # 所有列均可放置棋子
-  ```
-
-### `getGameEnded(self, board, player)`
-- **功能**: 判斷遊戲是否結束，返回：
-  - `1`: 當前玩家勝利
-  - `-1`: 對手勝利
+### 9. `getGameResult(self)`
+- **功能**: 獲取遊戲結果：
+  - `1`: 玩家1勝利
+  - `-1`: 玩家2勝利
   - `1e-4`: 平局
   - `0`: 遊戲尚未結束
 - **範例**:
   ```python
-  result = game.getGameEnded(board, 1)
-  print(result)
-  # Output: 0  # 遊戲尚未結束
+  result = game.getGameResult()
+  print(result)  # Output: 0 表示遊戲尚未結束
   ```
 
-### `display(self, board)`
+### 10. `getCanonicalForm(self, player)`
+- **功能**: 返回當前玩家的棋盤狀態，棋盤的值乘以當前玩家（1 或 -1），以便於不同玩家看到各自的視角。
+- **範例**:
+  ```python
+  board = game.getCanonicalForm(game.getCurrentPlayer())
+  print(board)  # 顯示當前玩家的棋盤
+  ```
+
+### 11. `display(self)`
 - **功能**: 顯示當前棋盤狀態，`X` 表示玩家1，`O` 表示玩家2，`.` 表示空格。
 - **範例**:
   ```python
-  game.display(board)
+  game.display()
   # Output:
   #  -----------------------
   # | .  .  .  .  .  .  .  |
@@ -88,125 +143,43 @@
   #  -----------------------
   ```
 
-## 2. 如何使用 Player
+### 12. `setEnvState(self, board, player)`
+- **功能**: 設置環境為指定的棋盤狀態和玩家，通過回放棋盤上的每一步操作來重現當前局面。
+- **範例**:
+  ```python
+  board = np.array([
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0],
+      [0, 0, 0, 0, -1, 0, 0],
+      [0, 0, 0, 1, -1, 0, 0]
+  ])
+  game.setEnvState(board, 1)  # 設置當前狀態為玩家1的回合
+  game.display()
+  ```
 
-要在 Connect 4 中運行自定義的 Player，需要先繼承 `Player` 類別並實作 `play` 方法。以下是使用 `RandomPlayer` 和 `HumanPlayer` 的範例：
+## 3. 運行 `main.py`
 
-### `RandomPlayer`
-隨機選擇一個合法動作：
-```python
-class RandomPlayer(Player):
-    def __init__(self, game):
-        self.game = game
+`main.py` 會調用兩位同學的 `DQNPlayer` 進行對戰。代碼中的 `CXXXXXXXXX` 和 `FXXXXXXXXX` 對應同學的代碼，具體如下：
 
-    def play(self, board):
-        valid_moves = self.game.getValidMoves(board, 1)
-        valid_actions = np.where(valid_moves == 1)[0]
-        return np.random.choice(valid_actions)
-```
+- `CXXXXXXXXX` 和 `FXXXXXXXXX` 資料夾分別包含每位同學的 `players.py` 文件和 `DQNPlayer_args` 配置。
+- 在運行對戰時，`main.py` 會初始化每位同學的 `DQNPlayer` 並使用專屬的權重和參數，最後執行一系列遊戲來決定勝負。
 
-### `HumanPlayer`
-讓使用者手動選擇動作：
-```python
-class HumanPlayer(Player):
-    def __init__(self, game):
-        self.game = game
+### 執行步驟
 
-    def play(self, board):
-        valid_moves = self.game.getValidMoves(board, 1)
-        valid_actions = np.where(valid_moves == 1)[0]
-        print("Valid moves:", valid_actions)
-        while True:
-            action = int(input("Choose a move: "))
-            if action in valid_actions:
-                break
-            print("Invalid move. Try again.")
-        return action
-```
+1. 在終端運行以下命令，開始 100 場對戰：
+   ```bash
+   python main.py
+   ```
+   輸出將會顯示兩位同學的對戰結果，包括每位玩家的勝場數和平局數。
 
-> 💡 **提示**: `RandomPlayer` 適合用來測試自動化對戰流程，而 `HumanPlayer` 則適合手動操作。
+2. 範例輸出：
+   ```
+   Starting 100 games between C_DQNPlayer and F_DQNPlayer...
 
-## 3. 深度強化學習的 Player 封裝
-
-如果要使用深度強化學習的 Player，例如 `DQNPlayer`，需要理解以下幾個要點：
-
-1. **模型架構**: 需要定義神經網路模型，用於預測每個動作的 Q 值。
-2. **超參數設置**: 必須設置學習率（`lr`）、折扣因子（`gamma`）等參數。
-3. **模型存取**: 模型的參數可以通過檔案保存與載入。
-
-以下是簡單的封裝範例：
-```python
-class DQNPlayer(Player):
-    def __init__(self, game, args):
-        self.game = game
-        self.args = args
-        self.model = self._build_model()
-
-    def _build_model(self):
-        model = DQNModel(self.game.getActionSize())
-        model.compile(optimizer=tf.keras.optimizers.Adam(lr=self.args.lr),
-                      loss='mse')
-        return model
-
-    def play(self, board):
-        board_input = np.array(board).reshape(-1, self.game.board_x, self.game.board_y, 1)
-        valid_moves = self.game.getValidMoves(board, 1)
-        q_values = self.model.predict(board_input, verbose=0)[0]
-        q_values[valid_moves == 0] = -float('inf')
-        best_action = np.argmax(q_values)
-        return best_action
-
-    def save_model(self, filepath):
-        # 保存模型參數
-        self.model.save_weights(filepath)
-
-    def load_model(self, filepath):
-        # 載入已保存的模型參數
-        self.model.load_weights(filepath)
-```
-
-> ⚙️ **注意**: 請確保在訓練後保存模型，方便後續載入進行對戰。
-
-## 4. 如何進行對戰
-
-學生可以通過以下範例進行自定義 Player 之間的對戰：
-
-```python
-from players import DQNPlayer, RandomPlayer
-from Arena import Arena
-from connect4 import Connect4Game
-
-def main():
-    game = Connect4Game()
-
-    # 設置玩家
-    args = dotdict({'lr': 0.001, 'gamma': 0.95, 'epsilon': 0.1})
-    dqn_player = DQNPlayer(game, args)
-    dqn_player.load('./dqn_model.weights.h5')
-    opponent_player = RandomPlayer(game)
-
-    # 開始對戰
-    arena = Arena(dqn_player, opponent_player, game)
-    results = arena.playGames(20)
-
-    # 顯示結果
-    print(f"DQNPlayer wins: {results[0]}")
-    print(f"RandomPlayer wins: {results[1]}")
-    print(f"Draws: {results[2]}")
-
-if __name__ == "__main__":
-    main()
-```
-
-## 5. Docker 與環境設定
-
-> 📦 **提示**: Dockerfile 可以啟用 GPU 支援，但是需要在主機上安裝 NVIDIA Container Toolkit (cuda>=12.4)，並且在執行 docker 時加上 `--gpus all` 參數。
-
-```bash
-docker run --gpus all my_connect4_image
-```
-
-> 🔧 **環境配置**: 可以使用 `environment.yaml` 快速配置開發環境。只需運行以下命令即可創建 conda 環境：
-```bash
-conda env create -f environment.yaml
-```
+   Results after 100 games:
+   C_DQNPlayer wins: 45
+   F_DQNPlayer wins: 50
+   Draws: 5
+   ```

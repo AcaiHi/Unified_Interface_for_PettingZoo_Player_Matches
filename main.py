@@ -1,48 +1,37 @@
-from players import DQNPlayer, RandomPlayer
-from Arena import Arena
-from utils import dotdict
-
 import os
+import sys
+from Arena import Arena
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def main():
     from connect4 import Connect4Game
     game = Connect4Game()
+    
+    from CXXXXXXXXX.players import DQNPlayer as C_DQNPlayer
+    from CXXXXXXXXX.players import DQNPlayer_args as args_in_C
 
-    # Set parameters for the DQNPlayer
-    args = dotdict({
-        'lr': 0.001,  # Learning rate
-        'gamma': 0.95,  # Discount factor
-    })
+    from FXXXXXXXXX.players import DQNPlayer as F_DQNPlayer
+    from FXXXXXXXXX.players import DQNPlayer_args as args_in_F
 
-    # Initialize the DQNPlayer
-    dqn_player = DQNPlayer(game, args)
+    # 初始化 CXXXXXXXXX 的 DQNPlayer，並使用其專屬的 args
+    player1 = C_DQNPlayer(game, args_in_C)
 
-    # Load an existing model (optional)
-    if os.path.exists('./dqn_model.weights.h5'):
-        dqn_player.load('./dqn_model.weights.h5')
-    else:
-        print("No model found, training a new model...")
-        # If no model is found, train a new model using the following code
-        dqn_player.train()
-        dqn_player.save('./dqn_model.weights.h5')  # Save the trained model
-        dqn_player.load('./dqn_model.weights.h5')  # Load the saved model
+    # 初始化 FXXXXXXXXX 的 DQNPlayer，並使用其專屬的 args
+    player2 = F_DQNPlayer(game, args_in_F)
 
-    # Set the opponent (RandomPlayer)
-    opponent_player = RandomPlayer(game)
+    # 設定對戰
+    arena = Arena(player1, player2, game)
 
-    # Create an Arena to facilitate the matches
-    arena = Arena(dqn_player, opponent_player, game)
+    # 開始對戰
+    num_games = 100
+    print(f"Starting {num_games} games between C_DQNPlayer and F_DQNPlayer...")
+    results = arena.playGames(num_games, verbose=False)
 
-    # Start playing the matches
-    num_games = 20
-    print("Starting the matches between DQNPlayer and RandomPlayer...")
-    results = arena.playGames(num_games)
-
-    # Display the results
+    # 顯示結果
     print(f"\nResults after {num_games} games:")
-    print(f"DQNPlayer wins: {results[0]}")
-    print(f"RandomPlayer wins: {results[1]}")
+    print(f"C_DQNPlayer wins: {results[0]}")
+    print(f"F_DQNPlayer wins: {results[1]}")
     print(f"Draws: {results[2]}")
 
 if __name__ == "__main__":
